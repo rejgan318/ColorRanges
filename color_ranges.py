@@ -8,7 +8,7 @@ from time import sleep
 import colorama as co
 from PIL import Image
 
-from print_ascii import make_ascii_picture, total_colors, get_background_color, get_color_from_pixel, pack_rgb, back_rgb
+from print_ascii import make_ascii_picture, total_colors, get_background_color, get_color_from_pixel, pack_rgb, back_rgb, fore_rgb
 
 pos = lambda y, x: co.Cursor.POS(x, y)
 
@@ -40,8 +40,11 @@ print(f"Цвет фона    : {back_rgb(*bg_color)}  {co.Back.RESET} "
 
 
 def print_char_xy(x: int, y: int, char: str, ascii: str):
-    print(pos(x + 1, y * 2 - 1) + ascii + char + pos(24, 1), end="")
-    sleep(0.08)
+    b_c = get_color_from_pixel(img, (y-1, x-1))
+    f_c = tuple(255 - v for v in b_c)
+
+    print(pos(x + 1, y * 2 - 1) + back_rgb(*b_c) + fore_rgb(*f_c) + char + "\x1b[0m" + pos(24, 1), end="")
+    # sleep(0.08)
 
 def check(x: int, y: int) -> bool:
     if x < 0 or x > img.width - 1 or y < 0 or y > img.height - 1:
@@ -59,6 +62,7 @@ def check(x: int, y: int) -> bool:
 def check_around(x: int, y: int) -> bool:
     if check(x, y):
         stack.append((x, y))
+        checked_append((x, y))
     # else:
     #     completed.append((x, y))
 
@@ -81,7 +85,7 @@ checked = []
 correct_append = True
 x = y = 0
 stack = []
-while len(checked) <= pixels_count:
+while len(checked) < pixels_count:
     if (x, y) not in checked:
         cur_color = get_color_from_pixel(img, (x, y))  # ищем первую и следующую область
         if cur_color != bg_color:
@@ -89,6 +93,7 @@ while len(checked) <= pixels_count:
             region_index += 1     # start with 1?
             regions[region_index] = []  # сюда мы будем сохранять координаты точек в каждой области
             stack.append((x, y))
+            checked_append((x, y))
         else:
             print_char_xy(y + 1, x + 1, "· ", "")
             checked_append((x, y))
@@ -96,7 +101,7 @@ while len(checked) <= pixels_count:
     while stack:    # Область найдена, заливаем пока не зальем полностью
         c, r = stack.pop()
         regions[region_index].append((c, r))
-        checked_append((c, r))
+        # checked_append((c, r))
         # checked.append((c, r))
         print_char_xy(r + 1, c + 1, "+ ", "")
 
