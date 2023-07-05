@@ -3,6 +3,7 @@
 """
 import configparser
 from pathlib import Path
+from time import sleep
 
 import colorama as co
 from PIL import Image
@@ -39,46 +40,65 @@ print(f"Цвет фона    : {back_rgb(*bg_color)}  {co.Back.RESET} "
 
 
 def print_char_xy(x: int, y: int, char: str, ascii: str):
-    print(pos(x + 1, y * 2 - 1) + ascii + char, end="")
-
+    print(pos(x + 1, y * 2 - 1) + ascii + char + pos(24, 1), end="")
+    sleep(0.08)
 
 def check(x: int, y: int) -> bool:
     if x < 0 or x > img.width - 1 or y < 0 or y > img.height - 1:
         return False
-    if (x, y) in completed:
+    if (x, y) in checked:
         return False
 
-    completed.append((x, y))
     if get_color_from_pixel(img, (x, y)) == bg_color:
+        checked_append((x, y))
+        # checked.append((x, y))
+        print_char_xy(y + 1, x + 1, "· ", "")
         return False
     return True
 
 def check_around(x: int, y: int) -> bool:
-    if check(x , y):
+    if check(x, y):
         stack.append((x, y))
+    # else:
+    #     completed.append((x, y))
+
+
+def checked_append(xy: tuple):
+    # assert xy not in checked
+    if xy not in checked:
+        checked.append(xy)
     else:
-        completed.append((x, y))
+        print_char_xy(xy[1] + 1, xy[0] + 1, "? ", "")
+        sleep(1)
+        # print("Sos!", xy, end="")
 
 pixels_count = img.width * img.height
 pixel_processed = 1
 regions = {}
-region_index = 0
-completed = []
+region_index = -1
+colors = []
+checked = []
+correct_append = True
 x = y = 0
 stack = []
-while len(completed) < pixels_count:
-    cur_color = get_color_from_pixel(img, (x, y))   # ищем первую и следующую область
-    if cur_color != bg_color and (x, y) not in completed:
-        region_index += 1     # start with 1?
-        regions[region_index] = []  # сюда мы будем сохранять координаты точек в каждой области
-        stack.append((x, y))
-    else:
-        completed.append((x, y))
-    while stack:    # Область найдена, заливаем
+while len(checked) <= pixels_count:
+    if (x, y) not in checked:
+        cur_color = get_color_from_pixel(img, (x, y))  # ищем первую и следующую область
+        if cur_color != bg_color:
+            colors.append(cur_color)
+            region_index += 1     # start with 1?
+            regions[region_index] = []  # сюда мы будем сохранять координаты точек в каждой области
+            stack.append((x, y))
+        else:
+            print_char_xy(y + 1, x + 1, "· ", "")
+            checked_append((x, y))
+            # checked.append((x, y))
+    while stack:    # Область найдена, заливаем пока не зальем полностью
         c, r = stack.pop()
         regions[region_index].append((c, r))
-        completed.append((c, r))
-        print_char_xy(r + 1, c + 1, "++", "")
+        checked_append((c, r))
+        # checked.append((c, r))
+        print_char_xy(r + 1, c + 1, "+ ", "")
 
         check_around(c - 1, r)
         check_around(c + 1, r)
@@ -91,6 +111,8 @@ while len(completed) < pixels_count:
         x = 0
         y += 1
 
+print(pos(24, 1))
+print(f"{len(checked)=} {len(set(checked))=}")
 
-print(pos(20, 1))
+assert len(checked) == len(set(checked))
 print("Done.")
