@@ -8,21 +8,18 @@ from time import sleep
 import colorama as co
 from PIL import Image
 
-from print_ascii import make_ascii_picture, total_colors, get_background_color, get_color_from_pixel, pack_rgb, back_rgb, fore_rgb
+from print_ascii import make_ascii_picture, total_colors, get_background_color, get_color_from_pixel, \
+    pack_rgb, back_rgb, fore_rgb
 
 pos = lambda y, x: co.Cursor.POS(x, y)
 
-print(f"{__file__}")
-
 CONFIG_FILE = "config.ini"
 CONFIG_FILE = CONFIG_FILE if Path(CONFIG_FILE).exists() else Path(__file__).parent / CONFIG_FILE
-
 config = configparser.ConfigParser()
 config.read(CONFIG_FILE)
 
 IMG_DIR = config["DEFAULT"]["img_dir"]
 IMG_DIR = IMG_DIR if Path(IMG_DIR).exists() and Path(IMG_DIR).is_dir() else Path(__file__).parent / IMG_DIR
-
 MIN_SAMPLE_SIZE = int(config["DEFAULT"].get("min_sample_size", "1000"))
 img_name = config["DEFAULT"]["img_name"]
 assert (Path(IMG_DIR) / img_name).exists(), f"Файл {img_name} не найден"
@@ -39,42 +36,44 @@ print(f"Цвет фона    : {back_rgb(*bg_color)}  {co.Back.RESET} "
       f"{bg_color}, #{bg_color[0]:02x}{bg_color[1]:02x}{bg_color[2]:02x}, {pack_rgb(bg_color)}")
 
 
-def print_char_xy(x: int, y: int, char: str, ascii: str):
-    b_c = get_color_from_pixel(img, (y-1, x-1))
-    f_c = tuple(255 - v for v in b_c)
+def print_char_xy(x: int, y: int, char: str):
+    b_c = get_color_from_pixel(img, (y-1, x-1))     # same background color
+    f_c = tuple(255 - v for v in b_c)   # inverse colors
 
     print(pos(x + 1, y * 2 - 1) + back_rgb(*b_c) + fore_rgb(*f_c) + char + "\x1b[0m" + pos(24, 1), end="")
-    # sleep(0.08)
+    if __debug__:
+        sleep(0.1)
 
-def check(x: int, y: int) -> bool:
-    if x < 0 or x > img.width - 1 or y < 0 or y > img.height - 1:
-        return False
-    if (x, y) in checked:
-        return False
 
-    if get_color_from_pixel(img, (x, y)) == bg_color:
-        checked_append((x, y))
-        # checked.append((x, y))
-        print_char_xy(y + 1, x + 1, "· ", "")
-        return False
-    return True
+def check_around(x: int, y: int):
+    def check(x: int, y: int) -> bool:
 
-def check_around(x: int, y: int) -> bool:
+        if any([x < 0, x > img.width - 1, y < 0, y > img.height - 1]):
+            return False
+        if (x, y) in checked:
+            return False
+
+        if get_color_from_pixel(img, (x, y)) == bg_color:
+            checked_append((x, y))
+            print_char_xy(y + 1, x + 1, "· ")
+            return False
+        return True
+
     if check(x, y):
         stack.append((x, y))
         checked_append((x, y))
-    # else:
-    #     completed.append((x, y))
 
 
 def checked_append(xy: tuple):
-    # assert xy not in checked
+    if __debug__:
+        sleep(0.1)
     if xy not in checked:
         checked.append(xy)
     else:
-        print_char_xy(xy[1] + 1, xy[0] + 1, "? ", "")
-        sleep(1)
-        # print("Sos!", xy, end="")
+        print_char_xy(xy[1] + 1, xy[0] + 1, "? ")
+        if __debug__:
+            sleep(1)
+
 
 pixels_count = img.width * img.height
 pixel_processed = 1
@@ -88,36 +87,31 @@ stack = []
 while len(checked) < pixels_count:
     if (x, y) not in checked:
         cur_color = get_color_from_pixel(img, (x, y))  # ищем первую и следующую область
+        checked_append((x, y))
         if cur_color != bg_color:
             colors.append(cur_color)
             region_index += 1     # start with 1?
             regions[region_index] = []  # сюда мы будем сохранять координаты точек в каждой области
             stack.append((x, y))
-            checked_append((x, y))
         else:
-            print_char_xy(y + 1, x + 1, "· ", "")
-            checked_append((x, y))
-            # checked.append((x, y))
+            print_char_xy(y + 1, x + 1, "· ")
     while stack:    # Область найдена, заливаем пока не зальем полностью
         c, r = stack.pop()
         regions[region_index].append((c, r))
-        # checked_append((c, r))
-        # checked.append((c, r))
-        print_char_xy(r + 1, c + 1, "+ ", "")
+        print_char_xy(r + 1, c + 1, "+ ")
 
         check_around(c - 1, r)
         check_around(c + 1, r)
         check_around(c, r - 1)
         check_around(c, r + 1)
 
-    # print_char_xy(y + 1, x + 1, "00", "")
     x += 1
     if x == img.width:
         x = 0
         y += 1
 
 print(pos(24, 1))
-print(f"{len(checked)=} {len(set(checked))=}")
-
 assert len(checked) == len(set(checked))
 print("Done.")
+
+
