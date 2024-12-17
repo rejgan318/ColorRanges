@@ -88,7 +88,10 @@ def gradient_color(fract: float,
     return pack_rgb(_gradient_color(color=color, to_color=to_color, fract=fract))
 
 
-def gradient_bar(fract: float, symbol: str = " ",
+# def gradient_bar(fract: float, symbol: str = " ",
+def gradient_bar(i: int,
+                 total: int,
+                 symbol: str = " ",
                  color: rgb_color = None,
                  to_color: rgb_color = None,
                  k: int = 30,
@@ -105,9 +108,8 @@ def gradient_bar(fract: float, symbol: str = " ",
     as a percentage at the end of the bar.
     The function relies on gradient color transitions to produce the visual result.
 
-    :param fract: A float value between 0.0 and 1.0 representing the fraction of the bar to fill.
-        Обычно равно i / n, где i - текущее значение итерации,
-        а n - всего итераций
+    :param i: number of iteration/ 0..total-1
+    :param total: total number of iterations
     :param symbol: A string used as the repeating unit in the bar, default is a single space.
         Если длина строки больше 1, то результат будет содержать ту же строку цветом от начального до конечного
     :param color: An RGB int representing the starting color of the gradient.
@@ -140,7 +142,7 @@ def gradient_bar(fract: float, symbol: str = " ",
         to_color = color
 
     back_or_fore = back_rgb if symbol == " " else fore_rgb
-
+    fract = (i + 1) / total
     if len(symbol) > 1:
         result = f"{back_or_fore(*_gradient_color(color=color, to_color=to_color, fract=fract))}{symbol}"
     elif rainbow:
@@ -172,7 +174,7 @@ if __name__ == '__main__':
         count = 0
         while True:
             count += 1
-            print("Calibrate...", gradient_bar(count / 1_000_000), "\r", end="")
+            print("Calibrate...", gradient_bar(count, 1_000_000), "\r", end="")
             if time() - start > interval:
                 break
         return count
@@ -183,42 +185,52 @@ if __name__ == '__main__':
 
 
     terminal_width = shutil.get_terminal_size().columns
-    if terminal_width < 80:
+    if terminal_width < 100:
         print(f"terminal width must be at least 100, but is {terminal_width}")
         exit(1)
 
     print(f'\n{" colorbar demo ":·^100}\n')
 
     print("Bar random examples")
-    for i in range(15):
+    n = 15
+    for i in range(n):
         color1, color2 = random.sample(list(Color), 2)
-        print(gradient_bar(1., symbol=random.choice(BAR_CHARS),
+        print(gradient_bar(n, n, symbol=random.choice(BAR_CHARS),
                            color=color1,
                            to_color=color2,
                            k=random.randint(10, 100), percent=False))
     print()
 
-    n = calibrate() * 2  # check it for the optimal time of test
-    print(" " * 100, "\r", end="")
+    # n = calibrate() * 2  # check it for the optimal time of test
+    # print(" " * 100, "\r", end="")
 
     print("Default:")
+    n = 100
     start = 0
-    num_iters = 100
-    delays = generate_delays(num_iters, 5)
-    for i in range(num_iters):
-        print("Progres bar:", gradient_bar((i+1) / num_iters), "\r", end="", flush=True)
+    delays = generate_delays(n, 5)
+    for i in range(n):
+        print("Progres bar:", gradient_bar(i, n), "\r", end="", flush=True)
         sleep(delays[i] - start)
         start = delays[i]
 
     print("\nrainbow off, percent off:")
+    start = 0
     for i in range(n):
-        print(f"Progres bar: {gradient_bar(i / n, rainbow=False, percent=False)}\r", end="")
+        print(f"Progres bar: {gradient_bar(i, n, rainbow=False, percent=False)}\r", end="")
+        sleep(delays[i] - start)
+        start = delays[i]
 
     print("\nanother colors, symbol, size")
+    start = 0
     for i in range(n):
-        print("Progres bar:", gradient_bar(i / n, symbol=BAR_CHARS[-1], color=0x1dccc0, to_color=0xd9d259, k=80),
+        print("Progres bar:", gradient_bar(i, n, symbol=BAR_CHARS[-1], color=0x1dccc0, to_color=0xd9d259, k=80),
               "\r", end="")
+        sleep(delays[i] - start)
+        start = delays[i]
 
     print("\nColor progres indicator:")
+    start = 0
     for i in range(n):
-        print(gradient_bar(i / n, symbol="Calculate...", color=Color.RED, to_color=Color.YELLOW), "\r", end="")
+        print(gradient_bar(i, n, symbol="Calculate...", color=Color.RED, to_color=Color.YELLOW), "\r", end="")
+        sleep(delays[i] - start)
+        start = delays[i]
