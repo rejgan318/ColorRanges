@@ -1,5 +1,3 @@
-from pickle import FALSE
-
 from time import time
 import enum
 import random
@@ -130,8 +128,6 @@ def make_color_string(s: str, color: rgb_color) -> str:
 
 if __name__ == '__main__':
 
-    TEST_make_gradient_bar = True
-    TEST_make_ascii_picture = False
     TEST_get_background_color = False
 
     if TEST_get_background_color:
@@ -146,32 +142,3 @@ if __name__ == '__main__':
         IMAGE_FILE_NAME = r'D:\dev\python\ColorRanges\imgs\small_probe.png'
         img = Image.open(IMAGE_FILE_NAME)
         print(make_ascii_picture(img))
-
-    if TEST_make_gradient_bar:
-
-        print("make_gradient_bar() - по умолчанию\n")
-        print(make_gradient_bar())
-
-        for i in range(15):
-            colors = random.sample(list(Color), 2)
-            print(make_gradient_bar(symbol=random.choice(chars_for_bar),
-                                    colors=(colors[0].value, colors[1].value),
-                                    k=random.randint(50, 120)))
-        print()
-        n = 50_000
-        for i in range(n):
-            fraction = i / n
-            print(f"Progres bar: {make_gradient_bar(k=100, fract=fraction)} {fraction:.0%}\r", end="")
-        print()
-        for i in range(n):
-            fraction = i / n
-            current_color = gradient_color(fraction=fraction)
-            print(f"Progres bar: {make_gradient_bar(k=100, fract=fraction, rainbow=False)} "
-                  f"{make_color_string(f'{fraction:.0%}', current_color)}\r", end="")
-        print()
-        for i in range(n):
-            fraction = i / n
-            current_color = gradient_color(from_color=Color.BLUE.value, to_color=Color.MAGENTA.value, fraction=fraction)
-            print(f"{make_color_string('Progres bar:', current_color)} "
-                  f"{fraction:.0%}\r", end="")
-        print()
