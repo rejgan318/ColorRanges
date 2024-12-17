@@ -129,6 +129,7 @@ def make_color_string(s: str, color: rgb_color) -> str:
 if __name__ == '__main__':
 
     TEST_get_background_color = False
+    TEST_make_ascii_picture = False
 
     if TEST_get_background_color:
         IMAGE_FILE_NAME = r'd:\dev\data\get_background_color.png'
