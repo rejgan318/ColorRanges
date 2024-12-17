@@ -1,11 +1,44 @@
+from pickle import FALSE
+
+from time import time
+import enum
+import random
+
 import colorama
 from PIL import Image
 import numpy as np
-from time import time
+
+type rgb_color = tuple[int, int, int]
 
 fore_rgb = lambda red, green, blue: f"\x1b[38;2;{red};{green};{blue}m"
 back_rgb = lambda red, green, blue: f"\x1b[48;2;{red};{green};{blue}m"
 RESET = "\x1b[0m"
+
+
+class Color(enum.Enum):
+    RED = (255, 0, 0)
+    GREEN = (0, 255, 0)
+    BLUE = (0, 0, 255)
+    WHITE = (255, 255, 255)
+    YELLOW = (255, 255, 0)
+    MAGENTA = (255, 0, 255)
+    BLACK = (0, 0, 0)
+    GREY = (128, 128, 128)
+
+
+class Gradient(enum.Enum):
+    RED_TO_GREEN = (Color.RED.value, Color.GREEN.value)
+    BLACK_TO_WHITE = (Color.BLACK.value, Color.WHITE.value)
+    WHITE_TO_BLACK = (Color.WHITE.value, Color.BLACK.value)
+    YELLOW_TO_MAGENTA = (Color.YELLOW.value, Color.MAGENTA.value)
+    BLUE_TO_YELLOW = (Color.BLUE.value, Color.YELLOW.value)
+    GREY_TO_WHITE = (Color.GREY.value, Color.WHITE.value)
+    GREY_TO_BLACK = (Color.GREY.value, Color.BLACK.value)
+
+    DEFAULT = (Color.RED.value, Color.GREEN.value)
+
+chars_for_bar = ' ▮▬■⌍—…⁙⇶▥▨▭▣▦▩▮▤▧▰⋯※⁕⁘→⇨⇒⇛·∘∞▪◎◯▮●◍◉◯≡≣▶⫸'
+
 
 def unpack_rgb(packed:  int) -> tuple[int, int, int]:
     rgb = ((packed >> 16) & 0xff,
@@ -72,16 +105,27 @@ def make_ascii_picture(img, multiplexer: int = None):
     result += RESET
     return result
 
+def gradient_color(from_color: rgb_color = None, to_color: rgb_color = None, fraction: float = 1.0) -> rgb_color:
+    from_color = from_color or Gradient.DEFAULT.value[0]
+    to_color = to_color or Gradient.DEFAULT.value[1]
+
+    return [round(from_color[rgb] + (to_color[rgb] - from_color[rgb]) * fraction) for rgb in range(3)]
+
 
 def make_gradient_bar(symbol: str = " ",
-                      colors: tuple[tuple[int, int, int], tuple[int, int, int]] = ((255, 0, 0),(0, 255, 0)),
-                      k: int = 30, fract: float = 1.0):
-
-    def make_gradient_color(rgb_colors, width, index):
-        return [round((rgb_colors[1][rgb] - rgb_colors[0][rgb]) / width * index + rgb_colors[0][rgb]) for rgb in range(3)]
+                      colors: rgb_color = Gradient.DEFAULT.value,
+                      k: int = 30, fract: float = 1.0, rainbow: bool = True):
 
     back_or_fore = back_rgb if symbol == " " else fore_rgb
-    return symbol.join([f"{back_or_fore(*make_gradient_color(colors, k, w))}" for w in range(round(k * fract))]) + symbol + RESET
+    if rainbow:
+        result = symbol.join([f"{back_or_fore(*gradient_color(*colors, w / k))}" for w in range(round(k * fract))]) + symbol
+    else:
+        result = f"{back_or_fore(*gradient_color(*colors, fraction=fract))}{symbol * round(k * fract)}"
+    return result  + RESET
+
+
+def make_color_string(s: str, color: rgb_color) -> str:
+    return f"{fore_rgb(*color)}{s}{RESET}"
 
 
 if __name__ == '__main__':
@@ -104,45 +148,30 @@ if __name__ == '__main__':
         print(make_ascii_picture(img))
 
     if TEST_make_gradient_bar:
-        import enum
-        # colorama.just_fix_windows_console()
 
-        chars_for_bar = ' ▮▬■⌍—…⁙⇶▥▨▭▣▦▩▮▤▧▰⋯※⁕⁘→⇨⇒⇛·∘∞▪◎◯▮●◍◉◯≡≣▶⫸'
-
-        class Color(enum.Enum):
-            RED = (255, 0, 0)
-            GREEN = (0, 255, 0)
-            BLUE = (0, 0, 255)
-            WHITE = (255, 255, 255)
-            YELLOW = (255, 255, 0)
-            MAGENTA = (255, 0, 255)
-            BLACK = (0, 0, 0)
-            GREY = (128, 128, 128)
-
-        class Gradient(enum.Enum):
-            RED_TO_GREEN = (Color.RED.value, Color.GREEN.value)
-            BLACK_TO_WHITE = (Color.BLACK.value, Color.WHITE.value)
-            WHITE_TO_BLACK = (Color.WHITE.value, Color.BLACK.value)
-            YELLOW_TO_MAGENTA = (Color.YELLOW.value, Color.MAGENTA.value)
-            BLUE_TO_YELLOW = (Color.BLUE.value, Color.YELLOW.value)
-            GREY_TO_WHITE = (Color.GREY.value, Color.WHITE.value)
-            GREY_TO_BLACK = (Color.GREY.value, Color.BLACK.value)
-
-        print("""make_gradient_bar()""")
+        print("make_gradient_bar() - по умолчанию\n")
         print(make_gradient_bar())
-        # print("""make_gradient_bar(' ')""")
-        # print(make_gradient_bar(' '))
-        for char in chars_for_bar:
-            print(make_gradient_bar(char, k=60))
-        print(make_gradient_bar('◉', colors=Gradient.GREY_TO_WHITE.value, k=10))
-        print(make_gradient_bar('●', colors=Gradient.GREY_TO_BLACK.value, k=100))
-        print(make_gradient_bar('≣', colors=Gradient.YELLOW_TO_MAGENTA.value, k=50))
-        print(make_gradient_bar(' ', colors=(Color.RED.value, Color.MAGENTA.value)))
-        print(make_gradient_bar(' ', colors=(Color.MAGENTA.value, Color.RED.value)))
 
+        for i in range(15):
+            colors = random.sample(list(Color), 2)
+            print(make_gradient_bar(symbol=random.choice(chars_for_bar),
+                                    colors=(colors[0].value, colors[1].value),
+                                    k=random.randint(50, 120)))
+        print()
         n = 50_000
+        for i in range(n):
+            fraction = i / n
+            print(f"Progres bar: {make_gradient_bar(k=100, fract=fraction)} {fraction:.0%}\r", end="")
         print()
         for i in range(n):
             fraction = i / n
-            print(f"Progres bar: {make_gradient_bar(fract=fraction)} {round(fraction * 100):3}%\r", end="")
+            current_color = gradient_color(fraction=fraction)
+            print(f"Progres bar: {make_gradient_bar(k=100, fract=fraction, rainbow=False)} "
+                  f"{make_color_string(f'{fraction:.0%}', current_color)}\r", end="")
+        print()
+        for i in range(n):
+            fraction = i / n
+            current_color = gradient_color(from_color=Color.BLUE.value, to_color=Color.MAGENTA.value, fraction=fraction)
+            print(f"{make_color_string('Progres bar:', current_color)} "
+                  f"{fraction:.0%}\r", end="")
         print()
