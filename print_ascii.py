@@ -59,9 +59,11 @@ def get_background_color(image: Image) -> tuple[int, int, int]:
     rgb = (rgb[:, 0] << 16 |
            rgb[:, 1] << 8 |
            rgb[:, 2])
+    # можно уменьшить выборку, взяв случайные значения
     fraction = 0.05
     # size = int(rgb.size * fraction)
     # rgb = np.random.choice(rgb, size=size, replace=False)
+
     unique, counts = np.unique(rgb, return_counts=True)
     return unpack_rgb(unique[counts.argmax()])
 
@@ -128,8 +130,8 @@ def make_color_string(s: str, color: rgb_color) -> str:
 
 if __name__ == '__main__':
 
-    TEST_get_background_color = False
-    TEST_make_ascii_picture = False
+    TEST_get_background_color = True
+    TEST_make_ascii_picture = True
 
     if TEST_get_background_color:
         IMAGE_FILE_NAME = r'd:\dev\data\get_background_color.png'

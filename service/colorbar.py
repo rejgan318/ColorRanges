@@ -1,5 +1,5 @@
 """
-RGB Colorbar
+Gradient_bar - красивый RGB прогресс-бар с различными цветами и настройками
 """
 import enum
 
@@ -89,7 +89,7 @@ def gradient_color(fract: float,
 
 
 # def gradient_bar(fract: float, symbol: str = " ",
-def gradient_bar(i: int,
+def gradient_bar(progress: int,
                  total: int,
                  symbol: str = " ",
                  color: rgb_color = None,
@@ -108,7 +108,7 @@ def gradient_bar(i: int,
     as a percentage at the end of the bar.
     The function relies on gradient color transitions to produce the visual result.
 
-    :param i: number of iteration/ 0..total-1
+    :param progress: number of iteration/ 0..total-1
     :param total: total number of iterations
     :param symbol: A string used as the repeating unit in the bar, default is a single space.
         Если длина строки больше 1, то результат будет содержать ту же строку цветом от начального до конечного
@@ -142,17 +142,18 @@ def gradient_bar(i: int,
         to_color = color
 
     back_or_fore = back_rgb if symbol == " " else fore_rgb
-    fract = (i + 1) / total
+    fract = (progress + 1) / total
     if len(symbol) > 1:
-        result = f"{back_or_fore(*_gradient_color(color=color, to_color=to_color, fract=fract))}{symbol}"
-    elif rainbow:
-        result = symbol.join([f"{back_or_fore(*_gradient_color(color=color, to_color=to_color, fract=w / k))}" for w in
-                              range(round(k * fract))]) + symbol
+        result = f"{back_or_fore(*_gradient_color(color=color, to_color=to_color, fract=fract))}{symbol}{RESET}"
     else:
-        result = (f"{back_or_fore(*_gradient_color(color=color, to_color=to_color, fract=fract))}"
-                  f"{symbol * round(k * fract)}")
-
-    result += RESET
+        if rainbow:
+            result = symbol.join([f"{back_or_fore(*_gradient_color(color=color, to_color=to_color, fract=w / k))}" for w in
+                                  range(round(k * fract))]) + symbol
+        else:
+            result = (back_or_fore(*_gradient_color(color=color, to_color=to_color, fract=fract)) +
+                      symbol * round(k * fract))
+        result += RESET + fore_rgb(*unpack_rgb(Color.GREY)) + '·' * round(k - k * fract) + RESET
+    # result += RESET
     if percent:
         result += f" {fract:.0%}"
 
@@ -165,33 +166,18 @@ if __name__ == '__main__':
     import random
 
 
-    def calibrate(interval: int = 1) -> int:
-        """
-        Прогон типичной операции в тестах в течение 1 секунды или заданного значения.
-        Определение количества циклов итераций в тестах
-        """
-        start = time()
-        count = 0
-        while True:
-            count += 1
-            print("Calibrate...", gradient_bar(count, 1_000_000), "\r", end="")
-            if time() - start > interval:
-                break
-        return count
-
     def generate_delays(num_iterations: int, show_time: int) -> list[float]:
         return sorted([random.random() * show_time for _ in range(num_iterations)])
 
 
-
     terminal_width = shutil.get_terminal_size().columns
-    if terminal_width < 100:
+    if terminal_width < 80:
         print(f"terminal width must be at least 100, but is {terminal_width}")
         exit(1)
 
     print(f'\n{" colorbar demo ":·^100}\n')
 
-    print("Bar random examples")
+    print("Random examples")
     n = 15
     for i in range(n):
         color1, color2 = random.sample(list(Color), 2)
@@ -199,38 +185,33 @@ if __name__ == '__main__':
                            color=color1,
                            to_color=color2,
                            k=random.randint(10, 100), percent=False))
-    print()
-
-    # n = calibrate() * 2  # check it for the optimal time of test
-    # print(" " * 100, "\r", end="")
-
-    print("Default:")
+    print("\nDefault:")
     n = 100
     start = 0
     delays = generate_delays(n, 5)
     for i in range(n):
-        print("Progres bar:", gradient_bar(i, n), "\r", end="", flush=True)
+        print("\rProgress bar:", gradient_bar(i, n), end="", flush=True)
         sleep(delays[i] - start)
         start = delays[i]
 
     print("\nrainbow off, percent off:")
     start = 0
     for i in range(n):
-        print(f"Progres bar: {gradient_bar(i, n, rainbow=False, percent=False)}\r", end="")
+        print("\rProgress bar: " + gradient_bar(i, n, rainbow=False, percent=False), end="")
         sleep(delays[i] - start)
         start = delays[i]
 
     print("\nanother colors, symbol, size")
     start = 0
     for i in range(n):
-        print("Progres bar:", gradient_bar(i, n, symbol=BAR_CHARS[-1], color=0x1dccc0, to_color=0xd9d259, k=80),
-              "\r", end="")
+        print("\rProgress bar:", gradient_bar(i, n, symbol=BAR_CHARS[-1], color=0x1dccc0, to_color=0xd9d259, k=80),
+              end="")
         sleep(delays[i] - start)
         start = delays[i]
 
     print("\nColor progres indicator:")
     start = 0
     for i in range(n):
-        print(gradient_bar(i, n, symbol="Calculate...", color=Color.RED, to_color=Color.YELLOW), "\r", end="")
+        print("\r" + gradient_bar(i, n, symbol="Calculate...", color=Color.RED, to_color=Color.YELLOW), end="")
         sleep(delays[i] - start)
         start = delays[i]

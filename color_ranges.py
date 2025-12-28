@@ -32,17 +32,17 @@ print(make_ascii_picture(img))
 colors = total_colors(img)
 print(f"Всего цветов : {len(colors)} " + ''.join([back_rgb(*bg) + "  " for bg in colors]) + co.Back.RESET)
 bg_color = get_background_color(img)
-print(f"Цвет фона    : {back_rgb(*bg_color)}  {co.Back.RESET} "
-      f"{bg_color}, #{bg_color[0]:02x}{bg_color[1]:02x}{bg_color[2]:02x}, {pack_rgb(bg_color)}")
+r, g, b = list(map(int, bg_color))
+print(f"Цвет фона    : {back_rgb(r, g, b)}  {co.Back.RESET} #{r:02x}{g:02x}{b:02x}")
 
 
 def print_char_xy(x: int, y: int, char: str):
     b_c = get_color_from_pixel(img, (y-1, x-1))     # same background color
     f_c = tuple(255 - v for v in b_c)   # inverse colors
 
-    print(pos(x + 1, y * 2 - 1) + back_rgb(*b_c) + fore_rgb(*f_c) + char + "\x1b[0m" + pos(24, 1), end="")
+    print(pos(x + 1, y * 2 - 1) + back_rgb(*b_c) + fore_rgb(*f_c) + char + "\x1b[0m" + pos(24, 1), end="", flush=True)
     if __debug__:
-        sleep(0.1)
+        sleep(0.01)
 
 
 def check_around(x: int, y: int):
