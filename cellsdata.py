@@ -1,18 +1,20 @@
 """
-Клеточная сетка типа лабиринта, поля игры "жизнь", судоку и пр. Реализация TUI
-- загрузка
-- вывод TUI
+Клеточная сетка типа лабиринта, поля игры "жизнь", судоку и пр. Реализация TUI.
+- Удобно читает сетку данных из файлов разных типов
+- вывод в терминале данных в терминале для визуального контроля
 """
-from pathlib import Path
 import csv
+from pathlib import Path
 
 from PIL import Image
+
+type cell_type = list[list[str]]
 
 
 class Walls:
     def __init__(self, file_name: Path = None, txt: str = None):
 
-        self.wall: list[list[str]] = []
+        self.wall: cell_type = []
         self.file_name = file_name
         self.palette = []
 
@@ -24,7 +26,11 @@ class Walls:
         elif txt:
             self.wall = self.load_from_str(txt)
         else:
-            raise ValueError("Один из параметров (file_name или txt) должен быть указан")
+            raise ValueError("Один из параметров (file_name или txt) "
+                             "должен быть указан")
+
+    def get_cells(self) -> cell_type:
+        return self.wall
 
     def load(self) -> None:
         load_method = {
@@ -38,7 +44,8 @@ class Walls:
 
         self.wall = load_method[ext]()
         if not self.validate_cells():
-            raise ImportError(f"Некорректные длины входных данных в файле {self.file_name}")
+            raise ImportError(f"Некорректные длины входных данных в файле "
+                              f"{self.file_name}")
 
     def validate_cells(self):
         return all(len(self.wall[0]) == len(self.wall[i]) for i in range(1, len(self.wall)))
@@ -98,7 +105,7 @@ class Walls:
                     char_idx += 1
 
                 color_char = next(k for k, v in self.palette.items() if v == color)
-                cells[row][col] = color_char    # кодируем цвет одним из символов color_to_chars
+                cells[row][col] = color_char  # кодируем цвет одним из символов color_to_chars
 
         return cells
 
@@ -124,7 +131,7 @@ class Walls:
         из сохраненной палитры получаем цвета по закодированному символу
         и используем их при печати двух пробелов (только для эстетических пропорций) с этим цветом фона
         Цвет формируется esc-последовательностью. Палитра должна быть известна после загрузки png
-        либо передается пареметром (для остальных типов данных)
+        либо передается параметром (для остальных типов данных)
         :param palette:
         :return:
         """
@@ -147,7 +154,6 @@ class Walls:
 
 
 def main():
-
     print("\nCSV")
     lab = Walls(Path("data/labirint.csv"))
     lab.print()

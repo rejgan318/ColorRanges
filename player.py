@@ -209,7 +209,7 @@ if __name__ == "__main__":
         player.run(actions)
 
     if TEST2:
-        from flood_fill import Walls
+        from cellsdata import Walls
 
         small = Walls(Path("imgs/small_probe.png"))
         w = len(small.wall[0])
@@ -225,7 +225,7 @@ if __name__ == "__main__":
         player.run(actions)
 
     if TEST3:
-        from flood_fill import Walls
+        from cellsdata import Walls
 
         small = Walls(Path("data/ex1.txt"))
         small.print_color(palette={'0': (50, 50, 50), '1': (200, 200, 200)})

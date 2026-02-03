@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from flood_fill import Walls
+from cellsdata import Walls
 import tempfile
 from PIL import Image
 
